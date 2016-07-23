@@ -113,7 +113,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
         menuToURLs[menuItem] = url
         menuItem.action = #selector(AppDelegate.directoryMenuClicked(_:))
         menuItem.target = self
-        if url.path! == getScreenShotDirectory().path! {//this isn't great, because it spawns a new task each time it's called.  Maybe we should call this at the beginning and cache.
+        if url.path! == getScreenShotDirectory().path {//this isn't great, because it spawns a new task each time it's called.  Maybe we should call this at the beginning and cache.
             menuItem.state = NSOnState
         }
         screenShotMenu.addItem(menuItem)
