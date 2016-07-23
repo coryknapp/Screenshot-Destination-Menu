@@ -63,6 +63,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
         task.launchPath = "/usr/bin/defaults"
         task.arguments = ["write", "com.apple.screencapture", "location", file.path!]
         task.launch()
+        task.waitUntilExit()
+        resetSystemUIServer()
     }
     
     func getScreenShotDirectory() -> NSURL {
@@ -79,6 +81,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
         let data = output.readDataToEndOfFile()
         let path = NSString(data: data, encoding: NSUTF8StringEncoding) as! String
         return NSURL(fileURLWithPath: path.chomp())
+    }
+    
+    func resetSystemUIServer() {
+        let task = NSTask()
+        task.launchPath = "/usr/bin/killall"
+        task.arguments = ["SystemUIServer"]
+        task.launch()
+        task.waitUntilExit()
     }
     
     func rebuildMenu() {
