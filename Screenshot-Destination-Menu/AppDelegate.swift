@@ -47,7 +47,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
         NSUserDefaults.standardUserDefaults().registerDefaults(["pathsKey":
             [NSURL(fileURLWithPath: NSHomeDirectory()+"/Desktop").path!,
                 NSURL(fileURLWithPath: NSHomeDirectory()+"/Documents").path!,
-                NSURL(fileURLWithPath: NSHomeDirectory()+"/Pictures").path!]]) //this doesn't seem like the cononical way to get at the ~/Pictures folder, so any suggestions would be aprituated.
+				//this doesn't seem like the canonical way to get at the
+				//~/Pictures folder, so any suggestions would be appreciated.
+                NSURL(fileURLWithPath: NSHomeDirectory()+"/Pictures").path!]])
         
         self.readPaths()
         self.rebuildMenu()
@@ -61,7 +63,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
     func setScreenShotDirectory(file: NSURL) {
         let task = NSTask()
         task.launchPath = "/usr/bin/defaults"
-        task.arguments = ["write", "com.apple.screencapture", "location", file.path!]
+        task.arguments =
+			["write", "com.apple.screencapture", "location", file.path!]
         task.launch()
         task.waitUntilExit()
         resetSystemUIServer()
@@ -74,12 +77,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
         task.launchPath = "/usr/bin/defaults"
         task.arguments = ["read", "com.apple.screencapture", "location"]
         task.standardOutput = stdout
-        task.standardError = errout //if the default setting doesn't exist, it'll spit out an error which we want to ignore.
+        task.standardError = errout //if the default setting doesn't exist,
+									//it'll spit out an error which we want to
+									//ignore.
         task.launch()
         task.waitUntilExit()
         let output = stdout.fileHandleForReading
         let data = output.readDataToEndOfFile()
-        let path = NSString(data: data, encoding: NSUTF8StringEncoding) as! String
+        let path =
+			NSString(data: data, encoding: NSUTF8StringEncoding) as! String
         return NSURL(fileURLWithPath: path.chomp())
     }
     
@@ -99,7 +105,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
         }
         screenShotMenu.addItem(separatorMenuItem)
         screenShotMenu.addItem(addMenuItem)
-        if( !pathList.isEmpty ){ //don't bother showing delete menu if there's nothing to delete
+        if( !pathList.isEmpty ){
+			//don't bother showing delete menu if there's nothing to delete
             screenShotMenu.addItem(deleteMenuItem)
         }
         screenShotMenu.addItem(quitMenuItem)
@@ -113,7 +120,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
         menuToURLs[menuItem] = url
         menuItem.action = #selector(AppDelegate.directoryMenuClicked(_:))
         menuItem.target = self
-        if url.path! == getScreenShotDirectory().path {//this isn't great, because it spawns a new task each time it's called.  Maybe we should call this at the beginning and cache.
+        if url.path! == getScreenShotDirectory().path {
+			//this isn't great, because it spawns a new task each time it's
+			//called.  Maybe we should call this at the beginning and cache.
             menuItem.state = NSOnState
         }
         screenShotMenu.addItem(menuItem)
@@ -131,7 +140,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
         if(pathList.contains(url)){
             return
         }
-        //apperently swift lacks a way to easliy insert a value into a sorted array
+        //apparently swift lacks a way to easily insert a value into a sorted
+		//array, correct me if I'm wrong
         pathList.append(url)
         pathList.sortInPlace {
             return $0.path! < $1.path!
@@ -154,7 +164,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
     
     func savePaths() {
         let defaults = NSUserDefaults.standardUserDefaults()
-        //can't save a list of URLS to standard defaults, so let's make an array of strings instead
+        //can't save a list of URLS to standard defaults, so let's make an
+		//array of strings instead
         var pathArray = [String]()
         for url in pathList{
             pathArray.append(url.path!)
@@ -168,7 +179,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
     
     @IBAction func directoryMenuClicked(sender: NSMenuItem) {
         self.setScreenShotDirectory(menuToURLs[sender]!)
-        self.rebuildMenu()//rebuild menu to make sure the correct menu item is turned on
+        self.rebuildMenu() //rebuild menu to make sure the correct menu item is
+						   //turned on
     }
     
     @IBAction func deleteMenuClicked(sender: NSMenuItem) {
