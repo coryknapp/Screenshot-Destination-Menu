@@ -30,18 +30,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
     
     let statusItem = NSStatusBar.systemStatusBar().statusItemWithLength(-1)
     
+	// store the paths to all directories we want to save as menu options
     var pathList = [NSURL]()
+
+	// a map of NSMenuItem objects to corresponding directory paths, so when an
+	// NSMenuItem is clicked, we know which path to set
     var menuToURLs = [NSMenuItem: NSURL]()
+
+	// same as above, except the keys are put in the delete menu instead.
     var deleteMenuToURLs = [NSMenuItem: NSURL]()
     
     func applicationDidFinishLaunching(aNotification: NSNotification) {
-        let icon = NSImage(named: "statusIcon")
-        icon?.template = true
-        self.getScreenShotDirectory()
-        statusItem.image = icon
+        if let icon = NSImage(named: "statusIcon") {
+            //turn it into a "template" image, which makes it so it looks fine in
+            //both normal and dark mode. Also, go ahead and force unwrap the icon
+            icon.template = true
+			statusItem.image = icon
+		} else {
+			//we didn't find an icon for some reason
+			//set a title so we draw something instead of nothing, or crashing
+			statusItem.title = "SD"
+		}
         statusItem.menu = screenShotMenu
-        
-        deleteMenuItem.submenu?.removeAllItems()
         
         // set default settings
         NSUserDefaults.standardUserDefaults().registerDefaults(["pathsKey":
@@ -56,13 +66,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
     }
     
     func applicationWillTerminate(aNotification: NSNotification) {
-        // Insert code here to tear down your application
         self.savePaths()
     }
     
+	// set the screen capture location directory to `file`
     func setScreenShotDirectory(file: NSURL) {
         let task = NSTask()
         task.launchPath = "/usr/bin/defaults"
+		// go ahead and force an unwrap of file.path because there's no
+		// recovering from that
         task.arguments =
 			["write", "com.apple.screencapture", "location", file.path!]
         task.launch()
@@ -70,10 +82,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
         resetSystemUIServer()
     }
     
+	// get the current setting or, if something goes wrong return the path
+	// to the desktop folder, assuming that there's no location set yet.
     func getScreenShotDirectory() -> NSURL {
         let task = NSTask()
         let stdout = NSPipe()
-        let errout = NSPipe()
+        let errout = NSPipe()//we ignore any error, but we have to make a pipe
+							 //to catch it
         task.launchPath = "/usr/bin/defaults"
         task.arguments = ["read", "com.apple.screencapture", "location"]
         task.standardOutput = stdout
@@ -86,9 +101,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
         let data = output.readDataToEndOfFile()
         let path =
 			NSString(data: data, encoding: NSUTF8StringEncoding) as! String
+		if path.lengthOfBytesUsingEncoding(NSUTF8StringEncoding) == 0 {
+			//empty output, so assume there has been no change to the setting
+			//return the default
+			return NSURL(fileURLWithPath: NSHomeDirectory()+"/Desktop");
+		}
         return NSURL(fileURLWithPath: path.chomp())
     }
     
+	// reset the SystemUIServer task to register the change
     func resetSystemUIServer() {
         let task = NSTask()
         task.launchPath = "/usr/bin/killall"
@@ -99,7 +120,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
     
     func rebuildMenu() {
         screenShotMenu.removeAllItems()
-        deleteMenuItem.submenu?.removeAllItems()
+		//throw a rt error if deleteMenuItem has no submenu
+        deleteMenuItem.submenu!.removeAllItems()
         for url in pathList {
             self.createMenuItemsForPath(url)
         }
@@ -194,7 +216,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSOpenSavePanelDelegate {
         // select a folder
         let openPanel = NSOpenPanel();
         openPanel.title = "Select a folder to receeve screenshots"
-        openPanel.message = "MESSAGE?"
+        openPanel.message = "Select a folder to receeve screenshots"
         openPanel.showsResizeIndicator=true;
         openPanel.canChooseDirectories = true;
         openPanel.canChooseFiles = false;
